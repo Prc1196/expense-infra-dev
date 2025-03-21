@@ -3,11 +3,18 @@
 #   public_key = file("C:\\devops\\daws-82s\\openvpnas.pub")
 # }
 
+# resource "aws_key_pair" "openvpnas" {
+#   key_name   = "openvpnas"
+#   public_key = file("C:\\devops\\daws-82s\\openvpnas.pub") 
+#   # Make sure you have the .pub file, or use a valid public key here
+# }
+
 resource "aws_key_pair" "openvpnas" {
-  key_name   = "openvpn-key"
-  public_key = file("C:\\devops\\daws-82s\\openvpnas.pub") 
-  # Make sure you have the .pub file, or use a valid public key here
+  key_name   = "openvpnas"
+  public_key = file("C:/devops/daws-82s/openvpnas.pem.pub")
 }
+
+
 
 resource "aws_instance" "openvpn" {
   ami                    = data.aws_ami.openvpn.id 
@@ -15,6 +22,7 @@ resource "aws_instance" "openvpn" {
   vpc_security_group_ids = [data.aws_ssm_parameter.vpn_sg_id.value]
   instance_type          = "t3.micro"
   subnet_id = local.public_subnet_id
+  user_data = file("user-data.sh")
   tags = merge (
     var.common_tags,
     {
@@ -23,3 +31,8 @@ resource "aws_instance" "openvpn" {
    
   )
 }
+
+output "vpn_ip" {
+  value       = aws_instance.openvpn.public_ip
+}
+
