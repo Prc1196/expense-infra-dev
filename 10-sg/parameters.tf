@@ -34,3 +34,5 @@ resource "aws_ssm_parameter" "vpn_sg_id" {
   type  = "String"
   value = module.vpn_sg.sg_id
 }
+
+

@@ -145,3 +145,51 @@ resource "aws_security_group_rule" "mysql_vpn" {
   source_security_group_id = module.vpn_sg.sg_id
   security_group_id = module.mysql_sg.sg_id
 }
+
+#backend should accept connection from vpn 1st we are taking SSH access
+resource "aws_security_group_rule" "backend_vpn" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = module.vpn_sg.sg_id
+  security_group_id = module.backend_sg.sg_id
+}
+
+#backend should accept connection from vpn 1st we are taking SSH access
+resource "aws_security_group_rule" "backend_vpn_http" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  source_security_group_id = module.vpn_sg.sg_id
+  security_group_id = module.backend_sg.sg_id
+}
+
+resource "aws_security_group_rule" "backend_app_alb" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  source_security_group_id = module.app-alb_sg.sg_id
+  security_group_id = module.backend_sg.sg_id
+}
+
+
+resource "aws_security_group_rule" "backend_bastion" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = module.bastion_sg.sg_id
+  security_group_id = module.backend_sg.sg_id
+}
+
+resource "aws_security_group_rule" "mysql_backend" {
+  type              = "ingress"
+  from_port         = 3306
+  to_port           = 3306
+  protocol          = "tcp"
+  source_security_group_id = module.backend_sg.sg_id
+  security_group_id = module.mysql_sg.sg_id
+}
