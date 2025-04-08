@@ -111,10 +111,10 @@ resource "aws_launch_template" "backend" {
 resource "aws_autoscaling_group" "backend" {
   name                      = local.resource_name
   max_size                  = 10
-  min_size                  = 2
-  health_check_grace_period = 60
+  min_size                  = 1
+  health_check_grace_period = 180 # 3 mins for instance to intialise
   health_check_type         = "ELB"
-  desired_capacity          = 2
+  desired_capacity          = 1
   target_group_arns = [aws_lb_target_group.backend.arn]
   launch_template {
     id      = aws_launch_template.backend.id
@@ -151,8 +151,6 @@ resource "aws_autoscaling_group" "backend" {
     value               = "dev"
     propagate_at_launch = false
   }
-
-  
 }
 
 resource "aws_lb_listener_rule" "backend" {
