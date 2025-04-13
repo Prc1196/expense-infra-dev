@@ -6,7 +6,7 @@ resource "aws_instance" "backend" {
   tags = merge(
     var.common_tags,
     {
-      Name    = "${var.project_name}-${var.environment}-backend"
+      Name   = "${var.project_name}-${var.environment}-backend"
     }
   )
 }
@@ -31,20 +31,30 @@ resource "null_resource" "backend" {
   #   destination = "/tmp/backend.sh"
   # }
 
-   provisioner "file" {
+  provisioner "file" {
     source      = "backend.sh"
     destination = "/tmp/backend.sh"
   }
+   
 
-
-   provisioner "remote-exec" {
-     # Bootstrap script called with private_ip of each node in the cluster
+  provisioner "remote-exec" {
      inline = [
-       "chmod +x /tmp/backend.sh",
-       "sudo sh /tmp/backend.sh ${var.environment}"
-    ]
-   }
+        "chmod +x /tmp/backend.sh",
+        "sudo  sh /tmp/backend.sh ${var.environment}"
+     ]
+  }
+
+  #  provisioner "remote-exec" {
+  #    # Bootstrap script called with private_ip of each node in the cluster
+  #    inline = [
+  #      "chmod +x /tmp/backend.sh",
+  #     #  "sudo sh /tmp/backend.sh ${var.environment}"
+  #      "sudo bash /tmp/backend.sh ${var.environment}"
+  #   ]
+  # }
 }
+
+
 
 resource "aws_ec2_instance_state" "backend" {
   instance_id = aws_instance.backend.id
@@ -64,7 +74,7 @@ resource "null_resource" "backend_delete" {
     instance_id = aws_instance.backend.id
   }
 
-  provisioner "local-exec"{
+  provisioner "local-exec" {
     command = "aws ec2 terminate-instances --instance-ids ${aws_instance.backend.id}"
   }
 
@@ -76,10 +86,11 @@ resource "aws_lb_target_group" "backend" {
   port     = 8080
   protocol = "HTTP"
   vpc_id   = local.vpc_id
+  deregistration_delay = 60
 
   health_check {
-    healthy_threshold =2
-    unhealthy_threshold =2
+    healthy_threshold = 2
+    unhealthy_threshold = 2
     timeout = 5
     protocol = "HTTP"
     port = 8080
@@ -137,7 +148,7 @@ resource "aws_autoscaling_group" "backend" {
   }
 
   timeouts {
-    delete = "5m"
+    delete = "10m"
   }
 
   tag {
@@ -147,10 +158,23 @@ resource "aws_autoscaling_group" "backend" {
   }
 
   tag {
-    key                 = "Enviroment"
+    key                 = "Environment"
     value               = "dev"
     propagate_at_launch = false
   }
+}
+
+resource "aws_autoscaling_policy" "backend" {
+  name                   = "${local.resource_name}-backend"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.backend.name
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+
+    target_value = 70.0
+  } 
 }
 
 resource "aws_lb_listener_rule" "backend" {

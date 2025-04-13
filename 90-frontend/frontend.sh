@@ -13,3 +13,7 @@ dnf install ansible -y
 ansible-pull  -i localhost, -U https://github.com/Prc1196/expense-ansible-roles-tf.git main.yaml -e COMPONENT=frontend -e ENVIRONMENT=$1
 
 
+
+
+
+
